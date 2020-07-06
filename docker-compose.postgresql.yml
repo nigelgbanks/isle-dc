@@ -1,0 +1,31 @@
+version: "3.7"
+networks:
+  default:
+    internal: true
+volumes:
+  postgresql-data:
+services:
+  # Database is chosen as the service name rather than postgresql,
+  # as institutions may want to swap out back-ends later and
+  # database is a more sensible default. When we have other
+  # databases the user can choose the appropriate docker-compose.yml
+  # file to use or none at all if using some database as a service.
+  database:
+    image: ${REPOSITORY:-islandora}/postgresql:${TAG:-latest}
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+  # Override defaults so this database is found as the services expect
+  # 'mariadb'.
+  drupal:
+    environment:
+      DRUPAL_DEFAULT_DB_DRIVER: pgsql
+      DRUPAL_DEFAULT_DB_PORT: 5432
+  gemini:
+    environment:
+      GEMINI_DB_DRIVER: pdo_pgsql
+      GEMINI_DB_PORT: 5432
+  fcrepo:
+    environment:
+      FCREPO_PERSISTENCE_TYPE: postgresql
+      FCREPO_DB_PORT: 5432
+  # @todo It is not possible to use Matomo with PostgreSQL at this time

@@ -16,14 +16,15 @@ services:
     image: traefik:2.2.1
     container_name: traefik
     # Do not set `api.insecure`, `api.dashboard`, `api.debug` to `true` in production.
-    # Also do not expose database 3306, as an entry point.
+    # Also do not expose database 3306/5432, as an entry point.
     command: >
       --api.insecure=true
       --api.dashboard=true
       --api.debug=true
       --entryPoints.http.address=:80
       --entryPoints.https.address=:443
-      --entryPoints.database.address=:3306
+      --entryPoints.mysql.address=:3306
+      --entryPoints.postgresql.address=:5432
       --providers.docker
       --providers.docker.network=gateway
       --providers.docker.exposedByDefault=false

@@ -41,10 +41,16 @@ services:
     # so we must dedicate a port to it in traefik, and direct all traffic to this router: HostSNI(`*`).
     labels:
       - traefik.enable=true
-      - traefik.tcp.services.${COMPOSE_PROJECT_NAME-isle-dc}-database.loadbalancer.server.port=3306
-      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-database_tcp.service=${COMPOSE_PROJECT_NAME-isle-dc}-database
-      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-database_tcp.entrypoints=database
-      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-database_tcp.rule=HostSNI(`*`)
+      # MySQL
+      - traefik.tcp.services.${COMPOSE_PROJECT_NAME-isle-dc}-mysql.loadbalancer.server.port=3306
+      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-mysql_tcp.service=${COMPOSE_PROJECT_NAME-isle-dc}-mysql
+      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-mysql_tcp.entrypoints=mysql
+      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-mysql_tcp.rule=HostSNI(`*`)
+      # PostgreSQL
+      - traefik.tcp.services.${COMPOSE_PROJECT_NAME-isle-dc}-postgresql.loadbalancer.server.port=5432
+      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-postgresql_tcp.service=${COMPOSE_PROJECT_NAME-isle-dc}-postgresql
+      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-postgresql_tcp.entrypoints=postgresql
+      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-postgresql_tcp.rule=HostSNI(`*`)
     networks:
       default:
         # Allow drupal to access the database with it's edge name to reference
