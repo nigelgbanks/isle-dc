@@ -5,12 +5,16 @@ ENV_FILE=$(shell \
 		cp sample.env .env; \
 	fi; \
 	echo .env)
+
+# Include the sample.env so new values can be added with defaults without requiring
+# users to regenerate their .env files.
+include sample.env
 include $(ENV_FILE)
 
 # The site to operate on when using drush -l $(SITE) commands
 SITE?=default
 
-# Make sure all docker-compose commands use the given project 
+# Make sure all docker-compose commands use the given project
 # name by setting the appropriate environment variables.
 export
 
@@ -18,9 +22,9 @@ export
 EXTERNAL_SERVICES := etcd watchtower traefik
 
 # The minimal set of docker-compose files required to be able to run anything.
-REQUIRED_SERIVCES := activemq alpaca blazegraph cantaloupe crayfish crayfits drupal fcrepo $(DATABASE_BACKEND) matomo solr
+REQUIRED_SERIVCES := activemq alpaca blazegraph cantaloupe crayfish crayfits drupal fcrepo mariadb matomo solr
 
-# Watchtower is an optional dependency, defaults to not being included.
+# Watchtower is an optional dependency, by default it is included.
 ifeq ($(INCLUDE_WATCHTOWER_SERVICE), true)
 	WATCHTOWER_SERVICE := watchtower
 endif
@@ -30,10 +34,27 @@ ifeq ($(INCLUDE_TRAEFIK_SERVICE), true)
 	TRAEFIK_SERVICE := traefik
 endif
 
-# The service traefik may be optional if we are sharing one from another project.
+# etcd is an optional dependency, by default it is not included.
 ifeq ($(INCLUDE_ETCD_SERVICE), true)
 	ETCD_SERVICE := etcd
 endif
+
+# Some services can optionally depend on PostgreSQL.
+POSTGRES_SERVICE :=
+ifeq ($(DRUPAL_DATABASE_SERVICE), postgresql)
+	POSTGRES_SERVICE += postgresql drupal.postgresql
+endif
+
+ifeq ($(FCREPO_DATABASE_SERVICE), postgresql)
+	POSTGRES_SERVICE += postgresql fcrepo.postgresql
+endif
+
+ifeq ($(GEMINI_DATABASE_SERVICE), postgresql)
+	POSTGRES_SERVICE += postgresql crayfish.postgresql
+endif
+
+# Sorts and removes duplicates.
+POSTGRES_SERVICE := $(sort $(POSTGRES_SERVICE))
 
 # Allows for customization of the environment variables inside of the containers.
 # If it does not exist create it from docker-compose.sample.env.yml.
@@ -46,7 +67,7 @@ OVERRIDE_SERVICE_ENVIRONMENT_VARIABLES=$(shell \
 # The services to be run (order is important), as services can override one
 # another. Traefik must be last if included as otherwise its network 
 # definition for `gateway` will be overriden.
-SERVICES := $(REQUIRED_SERIVCES) $(WATCHTOWER_SERVICE) $(ETCD_SERVICE) $(ENVIRONMENT) $(TRAEFIK_SERVICE) $(OVERRIDE_SERVICE_ENVIRONMENT_VARIABLES)
+SERVICES := $(REQUIRED_SERIVCES) $(WATCHTOWER_SERVICE) $(ETCD_SERVICE) $(POSTGRES_SERVICE) $(ENVIRONMENT) $(TRAEFIK_SERVICE) $(OVERRIDE_SERVICE_ENVIRONMENT_VARIABLES)
 
 default: docker-compose.yml pull
 

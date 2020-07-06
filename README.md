@@ -322,7 +322,9 @@ Some popular examples:
 - born-digital/drupal-project:dev-isle8-dev
 
 ```bash
-composer create-project --ignore-platform-reqs --no-interaction --no-install drupal/recommended-project ./codebase
+mkdir ./codebase
+cd ./codebase
+composer create-project --ignore-platform-reqs --no-interaction --no-install drupal/recommended-project .
 composer require -- drush/drush
 composer install
 make
