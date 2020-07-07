@@ -37,6 +37,7 @@ services:
       # Allows direct connection to the database for using
       # drush on the host machine. Do not do in production.
       - 3306:3306
+      - 5432:5432
       # The Web UI (enabled by --api.insecure=true)
       - ${TRAEFIK_WEB_UI_PORT-8080}:8080
     volumes:

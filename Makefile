@@ -40,21 +40,24 @@ ifeq ($(INCLUDE_ETCD_SERVICE), true)
 endif
 
 # Some services can optionally depend on PostgreSQL.
-POSTGRES_SERVICE :=
+# Either way their environment variables get customized 
+# depending on the database service they have choosen. 
+DATABASE_SERVICES := drupal.$(DRUPAL_DATABASE_SERVICE) fcrepo.$(FCREPO_DATABASE_SERVICE) crayfish.$(GEMINI_DATABASE_SERVICE)
+
 ifeq ($(DRUPAL_DATABASE_SERVICE), postgresql)
-	POSTGRES_SERVICE += postgresql drupal.postgresql
+	DATABASE_SERVICES += postgresql
 endif
 
 ifeq ($(FCREPO_DATABASE_SERVICE), postgresql)
-	POSTGRES_SERVICE += postgresql fcrepo.postgresql
+	DATABASE_SERVICES += postgresql
 endif
 
 ifeq ($(GEMINI_DATABASE_SERVICE), postgresql)
-	POSTGRES_SERVICE += postgresql crayfish.postgresql
+	DATABASE_SERVICES += postgresql
 endif
 
 # Sorts and removes duplicates.
-POSTGRES_SERVICE := $(sort $(POSTGRES_SERVICE))
+DATABASE_SERVICES := $(sort $(DATABASE_SERVICES))
 
 # Allows for customization of the environment variables inside of the containers.
 # If it does not exist create it from docker-compose.sample.env.yml.
@@ -67,7 +70,7 @@ OVERRIDE_SERVICE_ENVIRONMENT_VARIABLES=$(shell \
 # The services to be run (order is important), as services can override one
 # another. Traefik must be last if included as otherwise its network 
 # definition for `gateway` will be overriden.
-SERVICES := $(REQUIRED_SERIVCES) $(WATCHTOWER_SERVICE) $(ETCD_SERVICE) $(POSTGRES_SERVICE) $(ENVIRONMENT) $(TRAEFIK_SERVICE) $(OVERRIDE_SERVICE_ENVIRONMENT_VARIABLES)
+SERVICES := $(REQUIRED_SERIVCES) $(WATCHTOWER_SERVICE) $(ETCD_SERVICE) $(DATABASE_SERVICES) $(ENVIRONMENT) $(TRAEFIK_SERVICE) $(OVERRIDE_SERVICE_ENVIRONMENT_VARIABLES)
 
 default: docker-compose.yml pull
 
@@ -91,6 +94,13 @@ build:
 		cp $(CURDIR)/sample.Dockerfile $(PROJECT_DRUPAL_DOCKERFILE); \
 	fi
 	docker build -f $(PROJECT_DRUPAL_DOCKERFILE) -t $(COMPOSE_PROJECT_NAME)_drupal --build-arg REPOSITORY=$(REPOSITORY) --build-arg TAG=$(TAG) .
+
+
+# Updates codebase folder to be owned by the host user and nginx group.
+.PHONY: set-codebase-owner
+.SILENT: set-codebase-owner
+set-codebase-owner:
+	sudo find ./codebase -exec chown $(shell id -u):101 {} \;
 
 # Creates required databases for drupal site(s) using environment variables.
 .PHONY: databases

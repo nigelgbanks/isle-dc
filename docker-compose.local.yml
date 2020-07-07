@@ -19,14 +19,14 @@ services:
     image: ${REPOSITORY:-islandora}/drupal:${TAG:-latest}
     environment:
       # Use the edge name so the Drush on the host machine can access it.
-      DRUPAL_DEFAULT_DB_HOST: database.${COMPOSE_PROJECT_NAME-isle-dc}.localhost
+      DRUPAL_DEFAULT_DB_HOST: ${DRUPAL_DATABASE_SERVICE}.${COMPOSE_PROJECT_NAME-isle-dc}.localhost
     volumes:
       - ./codebase:/var/www/drupal
       - drupal-sites-data:/var/www/drupal/web/sites/default/files
       - solr-data:/opt/solr/server/solr
     depends_on:
       # Requires a the very minimum a database.
-      - database
+      - ${DRUPAL_DATABASE_SERVICE}
   # Extends docker-compose.solr.yml
   solr:
     volumes:
@@ -34,29 +34,3 @@ services:
       # data directories specifically and maintain the configuration as part of a customized image, where 
       # in your configuration is Solr managed under source control somewhere.
       - solr-data:/opt/solr/server/solr
-  # Extends docker-compose.database.yml
-  # Allows for access to the database through traefik to support using Drush locally.
-  database:
-    # Since this is not http, but tcp traffic it does does not understand the concept of a "host".
-    # so we must dedicate a port to it in traefik, and direct all traffic to this router: HostSNI(`*`).
-    labels:
-      - traefik.enable=true
-      # MySQL
-      - traefik.tcp.services.${COMPOSE_PROJECT_NAME-isle-dc}-mysql.loadbalancer.server.port=3306
-      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-mysql_tcp.service=${COMPOSE_PROJECT_NAME-isle-dc}-mysql
-      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-mysql_tcp.entrypoints=mysql
-      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-mysql_tcp.rule=HostSNI(`*`)
-      # PostgreSQL
-      - traefik.tcp.services.${COMPOSE_PROJECT_NAME-isle-dc}-postgresql.loadbalancer.server.port=5432
-      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-postgresql_tcp.service=${COMPOSE_PROJECT_NAME-isle-dc}-postgresql
-      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-postgresql_tcp.entrypoints=postgresql
-      - traefik.tcp.routers.${COMPOSE_PROJECT_NAME-isle-dc}-postgresql_tcp.rule=HostSNI(`*`)
-    networks:
-      default:
-        # Allow drupal to access the database with it's edge name to reference
-        # this service in addition to `database`. This allows us to use the edge
-        # name in settings.php so Drush on the host machine can be used in the
-        # codebase folder.
-        aliases:
-            - database.${COMPOSE_PROJECT_NAME-isle-dc}.localhost
-      gateway:

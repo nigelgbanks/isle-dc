@@ -89,7 +89,8 @@ with the same value you have chosen for `COMPOSE_PROJECT_NAME`:
 ```bash
 127.0.0.1 activemq.isle-dc.localhost
 127.0.0.1 blazegraph.isle-dc.localhost
-127.0.0.1 database.isle-dc.localhost
+127.0.0.1 mariadb.isle-dc.localhost
+127.0.0.1 postgresql.isle-dc.localhost
 127.0.0.1 fcrepo.isle-dc.localhost
 127.0.0.1 islandora.isle-dc.localhost
 127.0.0.1 solr.isle-dc.localhost
@@ -393,7 +394,7 @@ stopped, add ``restart: unless-stopped`` property to the container in the
 [docker-compose.yml] file. For example:
 
 ```yaml
-database:
+mariadb:
     image: islandora/mariadb:latest
     restart: unless-stopped
 ```
